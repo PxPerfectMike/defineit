@@ -23,6 +23,8 @@ const App = () => {
 	const x = useMotionValue(0);
 	const rotation = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
 
+	const cardClassName = delay > 0 ? 'mainCard no-pointer-events' : 'mainCard';
+
 	const getNewWord = () => {
 		setCurrentDefinition(null);
 		setDelay(1000);
@@ -32,6 +34,7 @@ const App = () => {
 	const handleSwipe = () => {
 		if (delay <= 0) {
 			getNewWord();
+			setDelay(1000);
 		}
 	};
 
@@ -116,23 +119,25 @@ const App = () => {
 	const cardControls = useAnimation();
 
 	const handleDragEnd = (event, info) => {
-		const offScreenThreshold = 150;
-		if (Math.abs(info.offset.x) > offScreenThreshold) {
-			setCurrentWord(nextWord);
-			setCurrentDefinition(nextDefinition);
-			setPhonetic(nextPhonetic);
-			setAudioUrl(nextAudioUrl);
-			setNextWord(randomWords(1));
-			fetchNextDefinition();
-		} else {
-			cardControls.start({
-				x: 0,
-				transition: { type: 'spring', stiffness: 200, damping: 30 },
-			});
+		if (delay <= 0) {
+			const offScreenThreshold = 150;
+			if (Math.abs(info.offset.x) > offScreenThreshold) {
+				setCurrentWord(nextWord);
+				setCurrentDefinition(nextDefinition);
+				setPhonetic(nextPhonetic);
+				setAudioUrl(nextAudioUrl);
+				setNextWord(randomWords(1));
+				fetchNextDefinition();
+			} else {
+				cardControls.start({
+					x: 0,
+					transition: { type: 'spring', stiffness: 200, damping: 30 },
+				});
+			}
 		}
 	};
 
-	const borderColor = delay <= 0 ? '#629d50' : 'red';
+	const borderColor = delay > 0 ? 'red' : '#629d50';
 
 	const cardStyle = {
 		position: 'relative',
@@ -190,9 +195,9 @@ const App = () => {
 			) : (
 				<motion.div
 					style={{ x, rotate: rotation, ...cardStyle, zIndex: 2 }}
-					drag={delay <= 0 ? 'x' : false}
+					drag='x'
 					onDragEnd={handleDragEnd}
-					className='mainCard'
+					className={cardClassName}
 					dragConstraints={dragConstraints}
 					dragElastic={0.7}
 					animate={cardControls}

@@ -5,3 +5,7 @@
 .current-word {
 	text-transform: capitalize;
 }
+
+.no-pointer-events {
+	pointer-events: none !important;
+}
