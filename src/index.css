@@ -1,10 +1,10 @@
 :root {
-	line-height: 1.5;
-	font-weight: 400;
-
 	color-scheme: light dark;
 	color: rgba(29, 28, 28, 0.87);
-	background-color: #a10a0a;
+	background: linear-gradient(35deg, #8b509d, #f5f5f5);
+	background-repeat: no-repeat;
+	height: 100vh;
+	width: auto;
 
 	font-synthesis: none;
 	text-rendering: optimizeLegibility;
