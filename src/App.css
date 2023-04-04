@@ -1,0 +1,7 @@
+.current-word {
+	font-family: 'Domine', serif !important;
+}
+
+.current-word {
+	text-transform: capitalize;
+}
