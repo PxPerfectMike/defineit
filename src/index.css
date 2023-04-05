@@ -1,4 +1,12 @@
+html,
+body {
+	height: 100%;
+	margin: 0 !important;
+	overflow: hidden;
+}
+
 :root {
+	font-family: 'Roboto', 'Courier New', Courier, monospace;
 	color-scheme: light dark;
 	color: rgba(29, 28, 28, 0.87);
 	background: linear-gradient(35deg, #8b509d, #f5f5f5);

@@ -11,101 +11,57 @@ import './App.css';
 const App = () => {
 	const [currentWord, setCurrentWord] = useState('');
 	const [currentDefinition, setCurrentDefinition] = useState(null);
-	const [phonetic, setPhonetic] = useState('');
-	const [audioUrl, setAudioUrl] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
 	const [delay, setDelay] = useState(0);
-	const [nextWord, setNextWord] = useState('');
-	const [nextDefinition, setNextDefinition] = useState(null);
-	const [nextPhonetic, setNextPhonetic] = useState('');
-	const [nextAudioUrl, setNextAudioUrl] = useState('');
 
 	const x = useMotionValue(0);
 	const rotation = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
 
 	const cardClassName = delay > 0 ? 'mainCard no-pointer-events' : 'mainCard';
 
-	const getNewWord = () => {
+	const audioLogo = (
+		<svg
+			xmlns='http://www.w3.org/2000/svg'
+			width='24'
+			height='24'
+			viewBox='0 0 24 24'
+			fill='none'
+			stroke='currentColor'
+			strokeWidth='2'
+			strokeLinecap='round'
+			strokeLinejoin='round'
+			className='feather feather-volume-2'
+		>
+			<path d='M11 5L6 9H2v6h4l5 4V5z'></path>
+			<path d='M15.54 8.46a5 5 0 0 1 0 7.07'></path>
+		</svg>
+	);
+
+	const getNewWord = async () => {
+		setIsLoading(true);
 		setCurrentDefinition(null);
 		setDelay(1000);
-		setCurrentWord(randomWords(1));
-	};
+		const word = randomWords(1);
+		setCurrentWord(word);
 
-	const handleSwipe = () => {
-		if (delay <= 0) {
-			getNewWord();
-			setDelay(1000);
-		}
-	};
-
-	const fetchDefinition = async () => {
-		setIsLoading(true);
 		const response = await fetch(
-			`https://api.dictionaryapi.dev/api/v2/entries/en/${currentWord}`
+			`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`
 		);
 		const data = await response.json();
 
-		// Check if the data is empty, if so, get a new word
 		if (!data.length) {
-			handleSwipe();
 			setIsLoading(false);
+			getNewWord();
 			return;
 		}
 
 		setCurrentDefinition(data[0]);
-
-		if (data[0].phonetics[1]) {
-			setPhonetic(data[0].phonetics[1].text);
-			setAudioUrl(data[0].phonetics[1].audio);
-		} else if (data[0].phonetics[0]) {
-			setPhonetic(data[0].phonetics[0].text);
-			setAudioUrl(data[0].phonetics[0].audio);
-		} else {
-			setPhonetic('');
-			setAudioUrl('');
-		}
-
 		setIsLoading(false);
 	};
 
-	const fetchNextDefinition = async () => {
-		const response = await fetch(
-			`https://api.dictionaryapi.dev/api/v2/entries/en/${nextWord}`
-		);
-		const data = await response.json();
-		setNextDefinition(data[0]);
-
-		if (data[0].phonetics[1]) {
-			setNextPhonetic(data[0].phonetics[1].text);
-			setNextAudioUrl(data[0].phonetics[1].audio);
-		} else if (data[0].phonetics[0]) {
-			setNextPhonetic(data[0].phonetics[0].text);
-			setNextAudioUrl(data[0].phonetics[0].audio);
-		} else {
-			setNextPhonetic('');
-			setNextAudioUrl('');
-		}
-	};
-
 	useEffect(() => {
-		if (currentWord) {
-			fetchDefinition();
-			setNextWord(randomWords(1));
-			fetchNextDefinition();
-		}
-	}, [currentWord]);
-
-	useEffect(() => {
-		if (currentDefinition === null && currentWord) {
-			handleSwipe();
-		}
-	}, [currentDefinition]);
-
-	useEffect(() => {
-		if (currentWord) {
-			fetchDefinition();
-		}
-	}, [currentWord]);
+		getNewWord();
+	}, []);
 
 	useEffect(() => {
 		if (delay > 0) {
@@ -122,12 +78,7 @@ const App = () => {
 		if (delay <= 0) {
 			const offScreenThreshold = 150;
 			if (Math.abs(info.offset.x) > offScreenThreshold) {
-				setCurrentWord(nextWord);
-				setCurrentDefinition(nextDefinition);
-				setPhonetic(nextPhonetic);
-				setAudioUrl(nextAudioUrl);
-				setNextWord(randomWords(1));
-				fetchNextDefinition();
+				getNewWord();
 			} else {
 				cardControls.start({
 					x: 0,
@@ -146,15 +97,14 @@ const App = () => {
 		margin: '1rem',
 		border: `4px solid ${borderColor}`,
 		borderRadius: '6px',
-		maxHeight: '90vh',
+		maxHeight: '80vh',
+		maxWidth: '95vw',
 	};
 
-	const dragConstraints = {
-		top: 0,
-		right: 0,
-		bottom: 0,
-		left: 0,
-	};
+	const dragConstraints =
+		delay > 0
+			? { top: 0, right: 0, bottom: 0, left: 0 }
+			: { top: 0, right: 0, bottom: 0, left: 0 };
 
 	const transformMeanings = (meanings) => {
 		const uniqueMeanings = {};
@@ -188,43 +138,58 @@ const App = () => {
 		  ))
 		: null;
 
+	const onContextMenu = (event) => {
+		event.preventDefault();
+	};
+
+	const onAudioButtonClick = (event) => {
+		event.stopPropagation();
+		document.getElementById('audioPronunciation').play();
+	};
+
 	return (
-		<div>
-			{isLoading ? (
-				<p>Loading...</p>
-			) : (
-				<motion.div
-					style={{ x, rotate: rotation, ...cardStyle, zIndex: 2 }}
-					drag='x'
-					onDragEnd={handleDragEnd}
-					className={cardClassName}
-					dragConstraints={dragConstraints}
-					dragElastic={0.7}
-					animate={cardControls}
-				>
-					{currentDefinition ? (
-						<>
-							<h1 className='current-word'>{currentWord}</h1>
-							<h2>{phonetic}</h2>
-							{DefineList}
-							{audioUrl && (
-								<div>
-									<audio src={audioUrl} id='audioPronunciation' />
-									<button
-										onClick={() =>
-											document.getElementById('audioPronunciation').play()
-										}
-									>
-										Play Pronunciation
-									</button>
+		<div className='app-container' onContextMenu={onContextMenu}>
+			<h1 className='app-title'>SwipeLingo</h1>
+			<div className='card-container'>
+				{isLoading ? (
+					<p>Loading...</p>
+				) : (
+					<motion.div
+						style={{ x, rotate: rotation, ...cardStyle, zIndex: 2 }}
+						drag='x'
+						onDragEnd={handleDragEnd}
+						className={cardClassName}
+						dragConstraints={dragConstraints}
+						dragElastic={0.7}
+						animate={cardControls}
+					>
+						{currentDefinition ? (
+							<>
+								<div className='card-header'>
+									<h1 className='current-word'>{currentWord}</h1>
+									{(currentDefinition.phonetics?.[1]?.audio ||
+										currentDefinition.phonetics?.[0]?.audio) && (
+										<div>
+											<audio
+												src={
+													currentDefinition.phonetics?.[1]?.audio ||
+													currentDefinition.phonetics?.[0]?.audio
+												}
+												id='audioPronunciation'
+											/>
+											<button onClick={onAudioButtonClick}>{audioLogo}</button>
+										</div>
+									)}
 								</div>
-							)}
-						</>
-					) : (
-						<p>No definition found</p>
-					)}
-				</motion.div>
-			)}
+								{DefineList}
+							</>
+						) : (
+							<p>No definition found</p>
+						)}
+					</motion.div>
+				)}
+			</div>
+			<div className='banner-ad-space' />
 		</div>
 	);
 };
